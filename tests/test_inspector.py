@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from type_inspector import AnyInspector, InspectionError, Inspector
+from type_inspector import AnyInspector, InspectionError, Inspector, pick_inspector
 
 
 def test_getattr_of_unsubscriptable_type(inspector: Inspector) -> None:
@@ -79,6 +79,8 @@ def test_any(inspector: Inspector) -> None:
     assert inspector.any_field["hello"].darkness[0].my[1].old["friend"].wrapped is Any
 
 
-def test_without_pydantic(type_inspector_with_pydantic_not_installed: ModuleType):
-    inspector = type_inspector_with_pydantic_not_installed.pick_inspector(list[dict[str, list[bytes]]], [])
-    assert inspector[0]["key"][0].wrapped is bytes
+def test_empty_inspector():
+    inspector = pick_inspector(int)
+    assert inspector.address == ""
+    assert isinstance(inspector, Inspector)
+    assert inspector.wrapped is int

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "type-inspector"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["Stanislav Zmiev <szmiev2000@gmail.com>"]
 license = "MIT"
@@ -8,6 +8,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.10"
 pydantic = { version = "^1.10.4", optional = true }
+issubclass = ">=0.1.2"
 
 
 [tool.poetry.group.dev.dependencies]

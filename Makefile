@@ -21,4 +21,4 @@ format:
 	poetry run black .;
 
 test:
-	poetry run pytest -v --cov=type_inspector --cov-report=term-missing:skip-covered --cov-report=xml --cov-branch tests;
+	poetry run pytest --cov=type_inspector --cov-report=term-missing:skip-covered --cov-report=xml --cov-branch tests;

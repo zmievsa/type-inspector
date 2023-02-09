@@ -6,22 +6,12 @@ from collections.abc import Mapping, Sequence
 from types import GenericAlias
 from typing import Any, NoReturn, get_args, get_origin
 
+from issubclass import issubclass
+
 __version__ = importlib.metadata.version("type-inspector")
 __all__ = ["pick_inspector", "__version__", "InspectionError"]
 
-try:
-    import pydantic
-except ImportError:
-    pydantic = None
-
 DEFAULT_ERROR_MSG = "Object is not subscriptable"
-
-
-class InspectionError(Exception):
-    def __init__(self, message: str, address: str, problematic_key: str | int):
-        super().__init__(message)
-        self.address = address
-        self.problematic_key = problematic_key
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
@@ -39,7 +29,7 @@ class Inspector:
     def new_address(self, key: int | str) -> list[str | int]:
         return self.address_parts + [key]
 
-    def raise_error(self, key: str | int, error: str = DEFAULT_ERROR_MSG) -> NoReturn:
+    def raise_error(self, key: object, error: str = DEFAULT_ERROR_MSG) -> NoReturn:
         raise InspectionError(error, self.address, key)
 
     def wrap_child(self, obj: type[object], new_part_of_address: str | int):
@@ -50,6 +40,38 @@ class Inspector:
         if len(self.address_parts) == 0:
             return ""
         return str(self.address_parts[0]) + "".join(f"[{repr(part)}]" for part in self.address_parts[1:])
+
+
+try:
+    import pydantic
+
+    class PydanticModelInspector(Inspector):
+        wrapped: type[pydantic.BaseModel]
+
+        def __getitem__(self, key: int | str | object):
+            if not isinstance(key, str):
+                self.raise_error(key, f"`{key}` is not a valid identifier.")
+            # Beware of https://github.com/pydantic/pydantic/issues/1112
+            for field in self.wrapped.__fields__.values():
+                if field.alias == key:
+                    schema = field.type_
+
+                    # means that it's a composite field such as list[int] or dict[str, int]
+                    if field.sub_fields:
+                        return self.wrap_child(field.outer_type_, key)
+                    return self.wrap_child(schema, key)
+            else:
+                self.raise_error(key, f"Object has no key `{repr(key)}`")
+
+except ImportError:
+    pydantic = None
+
+
+class InspectionError(Exception):
+    def __init__(self, message: str, address: str, problematic_key: object):
+        super().__init__(message)
+        self.address = address
+        self.problematic_key = problematic_key
 
 
 class AnyInspector(Inspector):
@@ -71,7 +93,7 @@ class GenericAliasInspector(Inspector):
         ):
             return self.wrap_child(get_args(self.wrapped)[0], key)
         else:
-            raise self.raise_error(key)
+            self.raise_error(key)
 
 
 class SequenceInspector(Inspector):
@@ -92,28 +114,7 @@ class UnionInspector(Inspector):
         self.raise_error(key, f"Object has no key `{repr(key)}`")
 
 
-if pydantic is not None:
-
-    class PydanticModelInspector(Inspector):
-        wrapped: type[pydantic.BaseModel]
-
-        def __getitem__(self, key: int | str | object):
-            if not isinstance(key, str):
-                self.raise_error(key, f"`{key}` is not a valid identifier.")
-            # Beware of https://github.com/pydantic/pydantic/issues/1112
-            for field in self.wrapped.__fields__.values():
-                if field.alias == key:
-                    schema = field.type_
-
-                    # means that it's a composite field such as list[int] or dict[str, int]
-                    if field.sub_fields:
-                        return self.wrap_child(field.outer_type_, key)
-                    return self.wrap_child(schema, key)
-            else:
-                self.raise_error(key, f"Object has no key `{repr(key)}`")
-
-
-def pick_inspector(type_: type[object], address: list[str | int] = None):
+def pick_inspector(type_: type[object], address: list[str | int] | None = None):
     if address is None:
         address = []
     if type_ is Any:

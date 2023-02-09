@@ -1,4 +1,6 @@
 import importlib
+from collections.abc import Generator
+from types import ModuleType
 from typing import Any
 
 import pytest
@@ -41,13 +43,13 @@ def inspector() -> Inspector:
 
 
 @pytest.fixture
-def type_inspector_with_pydantic_not_installed() -> None:
+def type_inspector_with_pydantic_not_installed() -> Generator[ModuleType, None, None]:
     import sys
 
     import type_inspector
 
     pydantic = sys.modules["pydantic"]
-    sys.modules["pydantic"] = None
+    sys.modules["pydantic"] = None  # type: ignore # Intentional craziness
     try:
         yield importlib.reload(type_inspector)
     finally:
