@@ -107,10 +107,10 @@ class SequenceInspector(Inspector):
 
 
 class UnionInspector(Inspector):
-    wrapped: tuple[type[object | GenericAlias], ...]
+    wrapped: types.UnionType
 
     def __getitem__(self, key: Any):
-        for arg in self.wrapped:
+        for arg in get_args(self.wrapped):
             with contextlib.suppress(TypeError, InspectionError):
                 return pick_inspector(arg, self.address_parts).__getattr__(key)
         self.raise_error(key, f"Object has no key `{repr(key)}`")
@@ -122,7 +122,7 @@ def pick_inspector(type_: Any, address: list[str | int] | None = None):
     if type_ is Any:
         return AnyInspector(type_, address)
     elif isinstance(type_, types.UnionType):
-        return UnionInspector(get_args(type_), address)
+        return UnionInspector(type_, address)
     elif isinstance(type_, GenericAlias):
         if issubclass(get_origin(type_), Mapping):
             if not issubclass(get_args(type_)[0], str):

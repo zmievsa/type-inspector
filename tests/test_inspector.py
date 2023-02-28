@@ -64,7 +64,7 @@ def test_root_models(inspector: Inspector) -> None:
 
 def test_optional_field(inspector: Inspector) -> None:
     assert isinstance(inspector.str_or_none_field, UnionInspector)
-    assert inspector.str_or_none_field.wrapped == (str, type(None))
+    assert inspector.str_or_none_field.wrapped == str | None
 
 
 def test_deep_path(inspector: Inspector) -> None:
