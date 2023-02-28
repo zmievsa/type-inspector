@@ -35,6 +35,7 @@ class Model(BaseModel):
     dict_of_int_str_field: dict[int, str]
     any_field: Any
     root_field: RootModel
+    str_or_none_field: str | None
 
 
 @pytest.fixture

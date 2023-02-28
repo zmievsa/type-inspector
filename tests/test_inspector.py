@@ -4,7 +4,13 @@ from typing import Any
 
 import pytest
 
-from type_inspector import AnyInspector, InspectionError, Inspector, pick_inspector
+from type_inspector import (
+    AnyInspector,
+    InspectionError,
+    Inspector,
+    UnionInspector,
+    pick_inspector,
+)
 
 
 def test_getattr_of_unsubscriptable_type(inspector: Inspector) -> None:
@@ -54,6 +60,11 @@ def test_getitem_of_invalid_pydantic_field(inspector: Inspector) -> None:
 
 def test_root_models(inspector: Inspector) -> None:
     assert inspector.root_field.wrapped is str
+
+
+def test_optional_field(inspector: Inspector) -> None:
+    assert isinstance(inspector.str_or_none_field, UnionInspector)
+    assert inspector.str_or_none_field.wrapped == (str, type(None))
 
 
 def test_deep_path(inspector: Inspector) -> None:

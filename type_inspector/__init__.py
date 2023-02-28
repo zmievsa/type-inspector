@@ -32,7 +32,7 @@ class Inspector:
     def raise_error(self, key: object, error: str = DEFAULT_ERROR_MSG) -> NoReturn:
         raise InspectionError(error, self.address, key)
 
-    def wrap_child(self, obj: type[object], new_part_of_address: str | int):
+    def wrap_child(self, obj: Any, new_part_of_address: str | int):
         return pick_inspector(obj, self.new_address(new_part_of_address))
 
     @property
@@ -59,6 +59,8 @@ try:
                     # means that it's a composite field such as list[int] or dict[str, int]
                     if field.sub_fields:
                         return self.wrap_child(field.outer_type_, key)
+                    elif isinstance(field.annotation, types.UnionType) and not isinstance(field.type_, types.UnionType):
+                        return self.wrap_child(field.annotation, key)
                     return self.wrap_child(schema, key)
             else:
                 self.raise_error(key, f"Object has no key `{repr(key)}`")
@@ -114,7 +116,7 @@ class UnionInspector(Inspector):
         self.raise_error(key, f"Object has no key `{repr(key)}`")
 
 
-def pick_inspector(type_: type[object], address: list[str | int] | None = None):
+def pick_inspector(type_: Any, address: list[str | int] | None = None):
     if address is None:
         address = []
     if type_ is Any:
