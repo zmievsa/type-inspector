@@ -95,3 +95,25 @@ def test_empty_inspector():
     assert inspector.address == ""
     assert isinstance(inspector, Inspector)
     assert inspector.wrapped is int
+
+
+def test_dict_without_annotations():
+    inspector = pick_inspector(dict)
+    assert inspector.hello.darkness[0].my[1].old["friend"].wrapped is Any
+
+
+def test_dict_access_with_int():
+    inspector = pick_inspector(dict)
+    with pytest.raises(InspectionError):
+        inspector[0]
+
+
+def test_list_without_annotations():
+    inspector = pick_inspector(list)
+    assert inspector[0].hello.darkness[0].my[1].old["friend"].wrapped is Any
+
+
+def test_list_access_with_attr():
+    inspector = pick_inspector(list)
+    with pytest.raises(InspectionError):
+        inspector.hewwo

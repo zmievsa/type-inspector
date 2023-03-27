@@ -4,14 +4,24 @@ import importlib.metadata
 import types
 from collections.abc import Mapping, Sequence
 from types import GenericAlias
-from typing import Any, NoReturn, get_args, get_origin
+from typing import TYPE_CHECKING, Any, NoReturn, get_args, get_origin
 
 from issubclass import issubclass
+
+if TYPE_CHECKING:
+    from typing_extensions import Never
 
 __version__ = importlib.metadata.version("type-inspector")
 __all__ = ["pick_inspector", "__version__", "InspectionError"]
 
 DEFAULT_ERROR_MSG = "Object is not subscriptable"
+
+
+class InspectionError(Exception):
+    def __init__(self, message: str, address: str, problematic_key: object):
+        super().__init__(message)
+        self.address = address
+        self.problematic_key = problematic_key
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
@@ -69,13 +79,6 @@ except ImportError:
     pydantic = None
 
 
-class InspectionError(Exception):
-    def __init__(self, message: str, address: str, problematic_key: object):
-        super().__init__(message)
-        self.address = address
-        self.problematic_key = problematic_key
-
-
 class AnyInspector(Inspector):
     def __getitem__(self, key: str | int) -> "AnyInspector":
         return AnyInspector(Any, self.new_address(key))
@@ -99,7 +102,7 @@ class GenericAliasInspector(Inspector):
 
 
 class SequenceInspector(Inspector):
-    def __getitem__(self, key: int | object):
+    def __getitem__(self, key: int | object) -> AnyInspector:
         if isinstance(key, int):
             return AnyInspector(Any, self.new_address(key))
         else:
@@ -114,6 +117,14 @@ class UnionInspector(Inspector):
             with contextlib.suppress(TypeError, InspectionError):
                 return pick_inspector(arg, self.address_parts).__getattr__(key)
         self.raise_error(key, f"Object has no key `{repr(key)}`")
+
+
+class DictInspector(Inspector):
+    def __getitem__(self, key: str | object) -> AnyInspector:
+        if isinstance(key, str):
+            return AnyInspector(Any, self.new_address(key))
+        else:
+            self.raise_error(key, f"The type `{repr(self.wrapped)}` does not support non-string key access")
 
 
 def pick_inspector(type_: Any, address: list[str | int] | None = None):
@@ -135,5 +146,7 @@ def pick_inspector(type_: Any, address: list[str | int] | None = None):
             return PydanticModelInspector(type_, address).__root__
         else:
             return PydanticModelInspector(type_, address)
+    elif isinstance(type_, type) and issubclass(type_, dict):
+        return DictInspector(type_, address)
     else:
         return Inspector(type_, address)
