@@ -20,8 +20,12 @@ DEFAULT_ERROR_MSG = "Object is not subscriptable"
 class InspectionError(Exception):
     def __init__(self, message: str, address: str, problematic_key: object):
         super().__init__(message)
+        self.message = message
         self.address = address
         self.problematic_key = problematic_key
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.message!r}. Object: {self.address}, Key: {self.problematic_key!r})"
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
@@ -49,7 +53,7 @@ class Inspector:
     def address(self) -> str:
         if len(self.address_parts) == 0:
             return ""
-        return str(self.address_parts[0]) + "".join(f"[{repr(part)}]" for part in self.address_parts[1:])
+        return str(self.address_parts[0]) + "".join(f"[{part!r}]" for part in self.address_parts[1:])
 
 
 try:
@@ -60,7 +64,7 @@ try:
 
         def __getitem__(self, key: int | str | object):
             if not isinstance(key, str):
-                self.raise_error(key, f"`{key}` is not a valid identifier.")
+                self.raise_error(key, f"{key!r} is not a valid identifier")
             # Beware of https://github.com/pydantic/pydantic/issues/1112
             for field in self.wrapped.__fields__.values():
                 if field.alias == key:
@@ -73,7 +77,7 @@ try:
                         return self.wrap_child(field.annotation, key)
                     return self.wrap_child(schema, key)
             else:
-                self.raise_error(key, f"Object has no key `{repr(key)}`")
+                self.raise_error(key, f"Object has no key {key!r}")
 
 except ImportError:
     pydantic = None
@@ -92,7 +96,7 @@ class GenericAliasInspector(Inspector):
             if isinstance(key, str):
                 return self.wrap_child(get_args(self.wrapped)[1], key)
             else:
-                self.raise_error(key, "Tried to use non-string key on a dict that only supports string keys")
+                self.raise_error(key, f"Tried to use non-string key on an object that only supports string keys")
         elif (
             isinstance(key, int) and issubclass(get_origin(self.wrapped), Sequence) and len(get_args(self.wrapped)) == 1
         ):
@@ -106,7 +110,7 @@ class SequenceInspector(Inspector):
         if isinstance(key, int):
             return AnyInspector(Any, self.new_address(key))
         else:
-            self.raise_error(key, f"The type `{repr(self.wrapped)}` does not support non-int key access")
+            self.raise_error(key, f"The type `{self.wrapped!r}` does not support non-int key access")
 
 
 class UnionInspector(Inspector):
@@ -116,7 +120,7 @@ class UnionInspector(Inspector):
         for arg in get_args(self.wrapped):
             with contextlib.suppress(TypeError, InspectionError):
                 return pick_inspector(arg, self.address_parts).__getattr__(key)
-        self.raise_error(key, f"Object has no key `{repr(key)}`")
+        self.raise_error(key, f"Object has no key {key!r}")
 
 
 class DictInspector(Inspector):
@@ -124,7 +128,7 @@ class DictInspector(Inspector):
         if isinstance(key, str):
             return AnyInspector(Any, self.new_address(key))
         else:
-            self.raise_error(key, f"The type `{repr(self.wrapped)}` does not support non-string key access")
+            self.raise_error(key, f"The type {self.wrapped!r} does not support non-string key access")
 
 
 def pick_inspector(type_: Any, address: list[str | int] | None = None):
