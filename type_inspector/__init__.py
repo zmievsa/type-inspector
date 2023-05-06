@@ -19,13 +19,11 @@ DEFAULT_ERROR_MSG = "Object is not subscriptable"
 
 class InspectionError(Exception):
     def __init__(self, message: str, address: str, problematic_key: object):
-        super().__init__(message)
         self.message = message
         self.address = address
         self.problematic_key = problematic_key
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self.message!r}. Object: {self.address}, Key: {self.problematic_key!r})"
+        super().__init__(f"{self.message}. Object: {self.address}, Key: {self.problematic_key!r}")
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
