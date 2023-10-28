@@ -2,7 +2,7 @@
 name = "type-inspector"
 version = "1.2.2"
 description = ""
-authors = ["Stanislav Zmiev <szmiev2000@gmail.com>"]
+authors = ["Stanislav Zmiev <zmievsa@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]

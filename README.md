@@ -5,8 +5,8 @@ Walk a deeply nested pydantic model, type alias or dataclass as if data was alre
 ---
 
 <p align="center">
-<a href="https://github.com/ovsyanka83/type-inspector/actions?query=workflow%3ATests+event%3Apush+branch%3Amain" target="_blank">
-    <img src="https://github.com/Ovsyanka83/type-inspector/actions/workflows/test.yaml/badge.svg?branch=main&event=push" alt="Test">
+<a href="https://github.com/zmievsa/type-inspector/actions?query=workflow%3ATests+event%3Apush+branch%3Amain" target="_blank">
+    <img src="https://github.com/zmievsa/type-inspector/actions/workflows/test.yaml/badge.svg?branch=main&event=push" alt="Test">
 </a>
 <a href="https://codecov.io/gh/ovsyanka83/type-inspector" target="_blank">
     <img src="https://img.shields.io/codecov/c/github/ovsyanka83/type-inspector?color=%2334D058" alt="Coverage">
